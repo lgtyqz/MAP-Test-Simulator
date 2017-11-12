@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MAP TEST SIMULATOR</title>
+        <style>
+            #questionHeader {
+                width: 100%;
+                background-color: #D4E7F6;
+                border: 1px solid #647896;
+                font-family: Verdana;
+                font-size: 16px;
+                padding: 20px 20px 20px 20px;
+                margin-bottom: 25px;
+            }
+            #imageHolder{
+                width: 100%;
+                background-color: #DEDEDE;
+                border 1px solid #999999;
+                margin-bottom: 25px;
+            }
+            #footer {
+                background-color: #D4E7F6;
+                border: 1px solid #647896;
+                width: 100%;
+                padding: 20px 20px 20px 20px;
+            }
+            #submitter {
+                background-color: white;
+                text-align: center;
+                width: 10%;
+                margin: auto;
+                border: 1px solid #647896;
+            }
+            #answers {
+                margin-left: 20px;
+                margin-right: 20px;
+                margin-bottom: 50px;
+                font-size: 14px;
+            }
+            span {
+                font-family: Verdana;
+                font-size: 14px;
+            }
+            #results {
+                font-family: Verdana;
+                font-size: 14px;
+            }
+        </style>
+        <script>
+/*window.onload = function(){
+    alert("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+}*/
+var shuffleQs = confirm("Shuffle Questions?");
+var currentQuestionIndex = 0;
+var questions = [];
+function Question(q, supp, answers, correctAnswerIndex){
+    this.q = q;             // The Question (string)
+    this.supp = supp;       // The Supp. Image (image url, string)
+    this.answers = answers; // List of answers (all strings)
+    this.correctAnswerIndex = correctAnswerIndex; // Index (Number)
+    this.correct = null;
+    this.userAnswer = null;
+    this.verify = function(){
+        if(this.userAnswer == this.correctAnswerIndex){
+            this.correct = true;
+        }else{
+            this.correct = false;
+        }
+    }
+}
+function loadQuestions(){
+    var file = document.getElementById("testFile").files[0];
+    var reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = function(e){
+        var qnas;
+        var macOption = reader.result.split("\n\n");
+        var winOption = reader.result.split("\r\n\r\n");
+        if(macOption.length > winOption.length){
+            qnas = macOption;
+            console.log("Unix text document detected.");
+        }else{
+            qnas = winOption;
+            console.log("Windows text document detected.");
+        }
+        var currentQuestionObj;
+        for(var i in qnas){
+            qnas[i] = qnas[i].split("\n");
+            currentQuestionObj = new Question(null, undefined, [], undefined);
+            currentQuestionObj.q = qnas[i][0];
+            for(var j = 1; j < qnas[i].length; j++){
+                if(qnas[i][j][0] == ";"){ //"Supplementary Image" tag
+                    currentQuestionObj.supp = supp; //image url
+                }else if(qnas[i][j][0] == "="){
+                    switch(qnas[i][j][1]){
+                        case "A":
+                            currentQuestionObj.correctAnswerIndex = 0;
+                        break;
+                        case "B":
+                            currentQuestionObj.correctAnswerIndex = 1;
+                        break;
+                        case "C":
+                            currentQuestionObj.correctAnswerIndex = 2;
+                        break;
+                        case "D":
+                            currentQuestionObj.correctAnswerIndex = 3;
+                        break;
+                        case "E":
+                            currentQuestionObj.correctAnswerIndex = 4;
+                        break;
+                    }
+                }else{
+                    currentQuestionObj.answers.push(qnas[i][j]);
+                }
+            }
+            questions.push(currentQuestionObj);
+        }
+        if(shuffleQs){
+            questions = shuffleArray(questions);
+        }
+        renderQuestion(currentQuestionIndex);
+    }
+    document.getElementById("button").style.visibility = "hidden";
+}
+function nextQuestion(){
+    var answered = false;
+    for(var i = 1; i < 6; i++){
+        var selector = document.getElementById(i.toString());
+        if(selector.checked){
+            questions[currentQuestionIndex].userAnswer = Number(selector.value);
+            questions[currentQuestionIndex].verify();
+            answered = true;
+        }
+    }
+    if(!answered){
+        return;
+    }
+    if(currentQuestionIndex + 1 < questions.length){
+        currentQuestionIndex++;
+        renderQuestion(currentQuestionIndex);
+    }else{
+        var outputString = "<br>Results:<br><br>";
+        var totalCorrect = 0;
+        for(var i in questions){
+            outputString += questions[i].q + "<br>";
+            if(questions[i].correct){
+                outputString += "Correct! The answer is " + questions[i].answers[questions[i].correctAnswerIndex] + "<br><br>";
+                totalCorrect++;
+            }else{
+                outputString += "Sorry! The answer was " + questions[i].answers[questions[i].correctAnswerIndex] + ". You answered " + questions[i].answers[questions[i].userAnswer] + "<br><br>";
+            }
+        }
+        outputString += "<br><br>You got " + totalCorrect.toString() + " out of " + questions.length.toString() + " correct for a score of <b>" + (100 * totalCorrect/questions.length).toString() + "%.";
+        document.getElementById("results").innerHTML = outputString;
+    }
+}
+//shuffleArray stolen from https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
+}
+function renderQuestion(qNum){
+    var q = questions[qNum];
+    if(q.supp !== undefined){
+        document.getElementById("imageHolder").innerHTML = "<img src=\"" + q.supp + "\">";
+    }
+    // TODO: Shuffle q.answers, put into nswers
+    //var nswers = shuffleArray(q.answers);
+    var nswers = q.answers;
+    document.getElementById("a1").innerHTML = nswers[0];
+    document.getElementById("a2").innerHTML = nswers[1];
+    document.getElementById("a3").innerHTML = nswers[2];
+    document.getElementById("a4").innerHTML = nswers[3];
+    document.getElementById("a5").innerHTML = nswers[4];
+    document.getElementById("questionHeader").innerHTML = "<b>" + (qNum + 1).toString() + ". " + q.q + "</b>";
+}
+
+        </script>
+    </head>
+    <body>
+        <div id="questionHeader"><b>Sample Text</b></div>
+        <div id="imageHolder">
+        </div>
+        <form id="answers">
+            <input type="radio" name="ans" value="0" id="1"><span id="a1"></span><br><br>
+            <input type="radio" name="ans" value="1" id="2"><span id="a2"></span><br><br>
+            <input type="radio" name="ans" value="2" id="3"><span id="a3"></span><br><br>
+            <input type="radio" name="ans" value="3" id="4"><span id="a4"></span><br><br>
+            <input type="radio" name="ans" value="4" id="5"><span id="a5"></span><br><br>
+        </form>
+        <div id="footer">
+            <div id="submitter" onclick="nextQuestion()">Go On</div>
+        </div>
+        <input id="testFile" type="file" value="Select Test File">
+        <button onclick="loadQuestions()" id="button">Load Questions</button>
+        <div id="results"></div>
+    </body>
+</html>

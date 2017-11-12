@@ -1,0 +1,105 @@
+If A-23=54, what is A?
+A. 77
+B. 123
+C. 12
+D. 31
+E. 6
+=A
+
+If B/3=96,B=?
+A. 22
+B. 32
+C. 43
+D. 288
+E. 6
+=D
+
+Look at the pattern: 12,10,8,6,4, What is the rule?
+A. +1
+B. +2
+C. x2
+D. -2
+E. None of the above
+=D
+
+Look at the pattern: 3,9,27,61,183. What is the rule?
+A. +1
+B. +2
+C. x3
+D. -2
+E. x2
+=C
+
+1/3___2/6
+A. >
+B. <
+C. =
+D. None of the above
+=C
+
+2/5___1/3
+A. >
+B. <
+C. =
+D. None of the above
+=A
+
+Which is 827 rounded to the nearest ten?
+A. 800
+B. 820
+C. 830
+D. 900
+=C
+
+Which is 4589 rounded to the nearest thousand?
+A. 4000
+B. 4500
+C. 4700
+D. 5000
+E. 4600
+=D
+
+3012___29980
+A. >
+B. <
+C. =
+D. None of the above
+=B
+
+26,496___26,596-96
+A. >
+B. <
+C. =
+D. None of the above
+=B
+
+-14__4
+A. >
+B. <
+C. =
+D. None of the above
+=B
+
+Which has 8 as a multiple?
+A. 2
+B. 3
+C. 5
+D. 16
+E. 12
+=A
+
+78 is a multiple of one of the following numbers. Which is the number?
+A. 6
+B. 17
+C. 7
+D. 18
+E. 5
+=A
+
+Dora's family wants to build a fence around their rectangular backyard. The length is 10m and the width is 30m. How long fence does Dora need?
+A. 300m
+B. 40m
+C. 60m
+D. 80m
+E. 100m
+=D
