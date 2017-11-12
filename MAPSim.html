@@ -120,17 +120,19 @@ function loadQuestions(){
         }
         renderQuestion(currentQuestionIndex);
     }
+    document.getElementById("testFile").style.visibility = "hidden";
     document.getElementById("button").style.visibility = "hidden";
 }
 function nextQuestion(){
     var answered = false;
     for(var i = 1; i < 6; i++){
-        var selector = document.getElementById(i.toString());
+        var selector = document.getElementById("r" + i.toString());
         if(selector.checked){
             questions[currentQuestionIndex].userAnswer = Number(selector.value);
             questions[currentQuestionIndex].verify();
             answered = true;
         }
+        selector.checked = false;
     }
     if(!answered){
         return;
@@ -172,11 +174,23 @@ function renderQuestion(qNum){
     // TODO: Shuffle q.answers, put into nswers
     //var nswers = shuffleArray(q.answers);
     var nswers = q.answers;
-    document.getElementById("a1").innerHTML = nswers[0];
+    for(var i = 0; i < 5; i++){
+        var corE = (i + 1).toString();
+        if(nswers.length > i){
+            document.getElementById("a" + corE).style.visibility = "visible";
+            document.getElementById("r" + corE).style.visibility = "visible";
+            document.getElementById("a" + corE).innerHTML = nswers[i];
+            document.getElementById("r" + corE).innerHTML = nswers[i];
+        }else{
+            document.getElementById("a" + corE).style.visibility = "hidden";
+            document.getElementById("r" + corE).style.visibility = "hidden";
+        }
+    }
+    /*document.getElementById("a1").innerHTML = nswers[0];
     document.getElementById("a2").innerHTML = nswers[1];
     document.getElementById("a3").innerHTML = nswers[2];
     document.getElementById("a4").innerHTML = nswers[3];
-    document.getElementById("a5").innerHTML = nswers[4];
+    document.getElementById("a5").innerHTML = nswers[4];*/
     document.getElementById("questionHeader").innerHTML = "<b>" + (qNum + 1).toString() + ". " + q.q + "</b>";
 }
 
@@ -187,11 +201,11 @@ function renderQuestion(qNum){
         <div id="imageHolder">
         </div>
         <form id="answers">
-            <input type="radio" name="ans" value="0" id="1"><span id="a1"></span><br><br>
-            <input type="radio" name="ans" value="1" id="2"><span id="a2"></span><br><br>
-            <input type="radio" name="ans" value="2" id="3"><span id="a3"></span><br><br>
-            <input type="radio" name="ans" value="3" id="4"><span id="a4"></span><br><br>
-            <input type="radio" name="ans" value="4" id="5"><span id="a5"></span><br><br>
+            <input type="radio" name="ans" value="0" id="r1" class="a1"><span id="a1" class="a1"></span><br><br>
+            <input type="radio" name="ans" value="1" id="r2" class="a2"><span id="a2" class="a2"></span><br><br>
+            <input type="radio" name="ans" value="2" id="r3" class="a3"><span id="a3" class="a3"></span><br><br>
+            <input type="radio" name="ans" value="3" id="r4" class="a4"><span id="a4" class="a4"></span><br><br>
+            <input type="radio" name="ans" value="4" id="r5" class="a5"><span id="a5" class="a5"></span><br><br>
         </form>
         <div id="footer">
             <div id="submitter" onclick="nextQuestion()">Go On</div>
