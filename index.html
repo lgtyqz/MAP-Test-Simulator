@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MAP TEST SIMULATOR</title>
+        <style>
+            #questionHeader {
+                width: 100%;
+                background-color: #D4E7F6;
+                border: 1px solid #647896;
+                font-family: Verdana;
+                font-size: 16px;
+                padding: 20px 20px 20px 20px;
+                margin-bottom: 25px;
+            }
+            #imageHolder, #suppReading {
+                width: 100%;
+                background-color: #DEDEDE;
+                border: 1px solid #999999;
+                margin-bottom: 25px;
+                padding: 20px 20px 20px 20px;
+                font-family: Verdana;
+            }
+            #footer {
+                background-color: #D4E7F6;
+                border: 1px solid #647896;
+                width: 100%;
+                padding: 20px 20px 20px 20px;
+            }
+            #submitter {
+                background-color: white;
+                text-align: center;
+                width: 10%;
+                margin: auto;
+                border: 1px solid #647896;
+            }
+            #answers {
+                margin-left: 20px;
+                margin-right: 20px;
+                margin-bottom: 50px;
+                font-size: 14px;
+            }
+            span {
+                font-family: Verdana;
+                font-size: 14px;
+            }
+            #results {
+                font-family: Verdana;
+                font-size: 14px;
+            }
+            #prompt {
+                font-family: Verdana;
+                font-size: 25px;
+                position: fixed;
+                left: 30%;
+                top: 40%;
+                width: 40%;
+                height: 20%;
+                text-align: center;
+                border: 5px solid black;
+                visibility: hidden;
+                background-color: white;
+                vertical-align: middle;
+            }
+            #promptText {
+                position: relative;
+                top: 30%;
+            }
+            #continueToAnswers {
+                left: 45%;
+                top: 65%;
+                width: 10%;
+                height: 5%;
+                visibility: hidden;
+            }
+        </style>
+        <script>
+/*window.onload = function(){
+    alert("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+}*/
+/**
+ * NEXT STEPS:
+ * Increment difficulty level
+ * - Mask the number of answer choices available
+ * - Force time for the student to stop and think
+ * - Show answers one at a time
+ * - Discourage rushing through the test (very commonplace for special ed students)
+ * Highlighter
+**/
+var shuffleQs = confirm("Shuffle Questions?");
+var currentQuestionIndex = 0;
+var questions = [];
+var difficulty;
+/**
+ * Schematic:
+ * (1) Question -> (2) Prompt to do work -> (3) Timed: (4) Continue Button ->
+ * (5) Answers displayed (6) one at a time in random order ->
+ * (7) Answer within time limit -> (8) Show correct answer
+ * Difficulty Levels:
+ * Level 1: All
+ * Level 2: All except step 6
+ * Level 3: All except step 4, 6
+ * Level 4: All except step 4, 6, 7
+ * Level 5: All except step 3, 4, 6, 7
+ * Level 6: Steps 1, 5, and 8
+ * Final Level (7): ONLY BARE-BONES. 1 and 5 only.
+ * 
+ * If test score passes tolerance (≈80% or so) for the level, increase the level.
+*/
+if(localStorage.mapTestDiff){
+    difficulty = Number(localStorage.mapTestDiff);
+}else{
+    localStorage.mapTestDiff = "1";
+}
+function Question(q, supp, answers, correctAnswerIndex){
+    this.q = q;             // The Question (string)
+    this.supp = supp;       // The Supp. Image (image url, string)
+    this.answers = answers; // List of answers (all strings)
+    this.correctAnswerIndex = correctAnswerIndex; // Index (Number)
+    this.correct = null;
+    this.userAnswer = null;
+    this.verify = function(){
+        if(this.userAnswer == this.correctAnswerIndex){
+            this.correct = true;
+        }else{
+            this.correct = false;
+        }
+    }
+}
+function loadQuestions(){
+    var file = document.getElementById("testFile").files[0];
+    var reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = function(e){
+        var qnas;
+        var macOption = reader.result.split("\n\n");
+        var winOption = reader.result.split("\r\n\r\n");
+        if(macOption.length > winOption.length){
+            qnas = macOption;
+            console.log("Unix text document detected.");
+        }else{
+            qnas = winOption;
+            console.log("Windows text document detected.");
+        }
+        var currentQuestionObj;
+        for(var i in qnas){
+            qnas[i] = qnas[i].split("\n");
+            currentQuestionObj = new Question(null, undefined, [], undefined);
+            currentQuestionObj.q = qnas[i][0];
+            currentQuestionObj.readingSupp = "";
+            var readingSupplement = false;
+            for(var j = 1; j < qnas[i].length; j++){
+                if(!readingSupplement){
+                    if(qnas[i][j][0] == ";"){ //"Supplementary Image" tag
+                        currentQuestionObj.supp = supp; //image url
+                    }else if(qnas[i][j][0] == "="){
+                        switch(qnas[i][j][1]){
+                            case "A":
+                                currentQuestionObj.correctAnswerIndex = 0;
+                            break;
+                            case "B":
+                                currentQuestionObj.correctAnswerIndex = 1;
+                            break;
+                            case "C":
+                                currentQuestionObj.correctAnswerIndex = 2;
+                            break;
+                            case "D":
+                                currentQuestionObj.correctAnswerIndex = 3;
+                            break;
+                            case "E":
+                                currentQuestionObj.correctAnswerIndex = 4;
+                            break;
+                        }
+                    }else if(qnas[i][j].includes("[read]")){
+                        readingSupplement = true;
+                        currentQuestionObj.readingSupp += (qnas[i][j].replace("[read]", "") + "\n");
+                    }else{
+                        currentQuestionObj.answers.push(qnas[i][j]);
+                    }
+                }else{
+                    if(qnas[i][j].includes("[read]")){
+                        readingSupplement = false;
+                        currentQuestionObj.readingSupp += qnas[i][j].replace("[read]", "");
+                    }else{
+                        currentQuestionObj.readingSupp += (qnas[i][j] + "\n");
+                    }
+                }
+            }
+            questions.push(currentQuestionObj);
+        }
+        if(shuffleQs){
+            questions = shuffleArray(questions);
+        }
+        renderQuestion(currentQuestionIndex);
+    }
+    document.getElementById("testFile").style.visibility = "hidden";
+    document.getElementById("button").style.visibility = "hidden";
+}
+function nextQuestion(){
+    var answered = false;
+    for(var i = 1; i < 6; i++){
+        var selector = document.getElementById("r" + i.toString());
+        if(selector.checked){
+            questions[currentQuestionIndex].userAnswer = Number(selector.value);
+            questions[currentQuestionIndex].verify();
+            answered = true;
+        }
+        selector.checked = false;
+    }
+    if(!answered){
+        return;
+    }
+    if(currentQuestionIndex + 1 < questions.length){
+        currentQuestionIndex++;
+        renderQuestion(currentQuestionIndex);
+    }else{
+        var outputString = "<br>Results:<br><br>";
+        var totalCorrect = 0;
+        for(var i in questions){
+            outputString += questions[i].q + "<br>";
+            if(questions[i].correct){
+                outputString += "Correct! The answer is " + questions[i].answers[questions[i].correctAnswerIndex] + "<br><br>";
+                totalCorrect++;
+            }else{
+                outputString += "Sorry! The answer was " + questions[i].answers[questions[i].correctAnswerIndex] + ". You answered " + questions[i].answers[questions[i].userAnswer] + "<br><br>";
+            }
+        }
+        outputString += "<br><br>You got " + totalCorrect.toString() + " out of " + questions.length.toString() + " correct for a score of <b>" + (100 * totalCorrect/questions.length).toString() + "%.";
+        document.getElementById("results").innerHTML = outputString;
+    }
+}
+//shuffleArray stolen from https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
+}
+function renderQuestion(qNum){
+    var q = questions[qNum];
+    var imageHolder = document.getElementById("imageHolder");
+    var suppReading = document.getElementById("suppReading");
+    var promptSpace = document.getElementById("prompt");
+    var continueButton = document.getElementById("continueToAnswers");
+    continueButton.style.visibility = "hidden";
+    promptSpace.style.visibility = "hidden";
+    if(q.supp !== undefined){
+        imageHolder.style.padding = "20px 20px 20px 20px";
+        imageHolder.style.marginBottom = "25px";
+        imageHolder.style.visibility = "visible";
+        imageHolder.innerHTML = "<img src=\"" + q.supp + "\">";
+    }else{
+        imageHolder.style.padding = "0px 0px 0px 0px";
+        imageHolder.style.marginBottom = "0px";
+        imageHolder.style.visibility = "hidden";
+    }
+    if(q.readingSupp !== ""){
+        suppReading.style.padding = "20px 20px 20px 20px";
+        suppReading.style.marginBottom = "25px";
+        suppReading.style.visibility = "visible";
+    }else{
+        suppReading.style.padding = "0px 0px 0px 0px";
+        suppReading.style.marginBottom = "0px";
+        suppReading.style.visibility = "hidden";
+    }
+    // Wait a bit; show prompt.
+    window.setTimeout(function(){ promptSpace.style.visibility = "visible";}, 2000);
+    // Wait a bit; show continue button.
+    window.setTimeout(function(){continueButton.style.visibility = "visible";}, 4000);
+    suppReading.innerHTML = "<b>" + q.readingSupp + "<b>";
+    document.getElementById("questionHeader").innerHTML = "<b>" + (qNum + 1).toString() + ". " + q.q + "</b>";
+    //Reset answers.
+    for(var i = 0; i < 5; i++){
+        var corE = (i + 1).toString();
+        document.getElementById("a" + corE).style.visibility = "hidden";
+        document.getElementById("r" + corE).style.visibility = "hidden";
+    }
+}
+function renderAnswers(qNum, ansNum=0){
+    var q = questions[qNum];
+    var promptSpace = document.getElementById("prompt");
+    var continueButton = document.getElementById("continueToAnswers");
+    continueButton.style.visibility = "hidden";
+    promptSpace.style.visibility = "hidden";
+    // TODO: Shuffle q.answers, put into nswers
+    //var nswers = shuffleArray(q.answers);
+    var nswers = q.answers;
+    
+    //Display answers.
+    //TODO: In random order.
+    var corE = (ansNum + 1).toString();
+    if(nswers.length > ansNum){
+        document.getElementById("a" + corE).style.visibility = "visible";
+        document.getElementById("r" + corE).style.visibility = "visible";
+        document.getElementById("a" + corE).innerHTML = nswers[ansNum];
+        document.getElementById("r" + corE).innerHTML = nswers[ansNum];
+    }else if(ansNum < 5){
+        document.getElementById("a" + corE).style.visibility = "hidden";
+        document.getElementById("r" + corE).style.visibility = "hidden";
+    }else{
+        return;
+    }
+        //TODO: Delay.
+    /*document.getElementById("a1").innerHTML = nswers[0];
+    document.getElementById("a2").innerHTML = nswers[1];
+    document.getElementById("a3").innerHTML = nswers[2];
+    document.getElementById("a4").innerHTML = nswers[3];
+    document.getElementById("a5").innerHTML = nswers[4];*/
+    /*if(difficulty < 2){
+        window.setTimeout()
+    }*/
+    window.setTimeout(function(){ renderAnswers(qNum, ansNum + 1); }, 1000);
+}
+        </script>
+    </head>
+    <body>
+        <div id="questionHeader"><b>Sample Text</b></div>
+        <div id="imageHolder">
+        </div>
+        <div id="suppReading"></div>
+        <div id="prompt">
+            <div id="promptText">READ THE QUESTION!<br>NOW DO YOUR WORK ON YOUR SCRATCH PAPER!</div>
+        </div>
+        <button id="continueToAnswers" onclick="renderAnswers(currentQuestionIndex, 0)">Continue to Answers</button>
+        <form id="answers">
+            <input type="radio" name="ans" value="0" id="r1" class="a1"><span id="a1" class="a1"></span><br><br>
+            <input type="radio" name="ans" value="1" id="r2" class="a2"><span id="a2" class="a2"></span><br><br>
+            <input type="radio" name="ans" value="2" id="r3" class="a3"><span id="a3" class="a3"></span><br><br>
+            <input type="radio" name="ans" value="3" id="r4" class="a4"><span id="a4" class="a4"></span><br><br>
+            <input type="radio" name="ans" value="4" id="r5" class="a5"><span id="a5" class="a5"></span><br><br>
+        </form>
+        <div id="footer">
+            <div id="submitter" onclick="nextQuestion()">Go On</div>
+        </div>
+        <input id="testFile" type="file" value="Select Test File">
+        <button onclick="loadQuestions()" id="button">Load Questions</button>
+        <div id="results"></div>
+    </body>
+</html>
